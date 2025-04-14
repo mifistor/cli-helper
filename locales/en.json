@@ -1,0 +1,12 @@
+{
+  "usage_error": "Error: Query is required",
+  "usage_help": "Usage: cli-helper [--model MODEL] [--copy] QUERY",
+  "api_key_error": "OPENAI_API_KEY not found in .env file or environment variables",
+  "env_warning": "Warning: No .env file found or error loading it",
+  "clipboard_error": "Error copying to clipboard: %v",
+  "clipboard_success": "Command copied to clipboard",
+  "clipboard_not_supported": "Clipboard copying is not supported for OS %s",
+  "clipboard_tools_not_found": "Clipboard tools (xclip or xsel) not found",
+  "system_prompt": "You are a helpful assistant that provides terminal commands.",
+  "default_prompt_template": "I want to perform an action in the terminal on %s operating system. Reply ONLY with the command without explanations. If the command is dangerous (can delete data or harm the system), add a 'WARNING: ' prefix before the command. Query: %s Command:"
+}

@@ -21,8 +21,10 @@ NC=\033[0m # No Color
 # Основная цель - сборка
 build:
 	@echo "${GREEN}Сборка $(BINARY_NAME)...${NC}"
-	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)/locales
 	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -v
+	@cp -r locales/* $(BUILD_DIR)/locales/
+	@echo "${GREEN}Файлы локализации скопированы в $(BUILD_DIR)/locales/${NC}"
 
 # Установка зависимостей
 deps:
@@ -32,7 +34,10 @@ deps:
 # Установка бинарного файла в систему
 install: build
 	@echo "${GREEN}Установка $(BINARY_NAME) в /usr/local/bin...${NC}"
+	@mkdir -p /usr/local/share/$(BINARY_NAME)/locales
 	cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
+	cp -r locales/* /usr/local/share/$(BINARY_NAME)/locales/
+	@echo "${GREEN}Файлы локализации установлены в /usr/local/share/$(BINARY_NAME)/locales/${NC}"
 
 # Очистка сборки
 clean:
@@ -52,7 +57,7 @@ example:
 # Запуск основной программы
 run:
 	@echo "${GREEN}Запуск $(BINARY_NAME)...${NC}"
-	$(GORUN) main.go $(ARGS)
+	$(GORUN) . $(COPY) $(ARGS)
 
 # Справка
 help:
@@ -64,6 +69,7 @@ help:
 	@echo "  make test     - Запуск тестов"
 	@echo "  make example  - Запуск примера"
 	@echo "  make run ARGS=\"ваш запрос\" - Запуск основной программы с аргументами"
+	@echo "  make run COPY=\"--copy\" ARGS=\"ваш запрос\" - Запуск с копированием результата в буфер обмена"
 	@echo "  make help     - Показать эту справку"
 
 # По умолчанию
