@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -97,6 +98,16 @@ func copyToClipboard(text string) error {
 		}
 	}
 	
+	// Удаляем префикс "bash" если он есть
+	if strings.HasPrefix(cleanText, "bash") {
+		cleanText = strings.TrimPrefix(cleanText, "bash")
+	}
+	
+	// Удаляем префикс "WARNING: " если он есть
+	if strings.HasPrefix(cleanText, "WARNING: ") {
+		cleanText = strings.TrimPrefix(cleanText, "WARNING: ")
+	}
+	
 	// Удаляем лишние пробелы в начале и конце
 	cleanText = strings.TrimSpace(cleanText)
 
@@ -123,6 +134,35 @@ func copyToClipboard(text string) error {
 	return cmd.Run()
 }
 
+// Загружает файл .env из различных мест
+func loadEnvFile() error {
+	// Пути для поиска файла .env
+	var envPaths []string
+
+	// 1. Текущая директория
+	envPaths = append(envPaths, ".env")
+
+	// 2. Директория рядом с исполняемым файлом
+	if execDir := getExecutableDir(); execDir != "" {
+		envPaths = append(envPaths, filepath.Join(execDir, ".env"))
+	}
+
+	// 3. Домашняя директория пользователя
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		envPaths = append(envPaths, filepath.Join(homeDir, ".cli-helper", ".env"))
+	}
+
+	// Пробуем загрузить файл .env из каждого пути
+	for _, path := range envPaths {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			return godotenv.Load(path)
+		}
+	}
+
+	// Если файл не найден, возвращаем ошибку
+	return fmt.Errorf(".env file not found in any of the search paths")
+}
+
 func main() {
 	// Инициализируем локализатор
 	var err error
@@ -137,13 +177,13 @@ func main() {
 	}
 
 	// Загружаем .env файл
-	if err := godotenv.Load(); err != nil {
-		log.Println(i18n.Get("env_warning"))
+	if err := loadEnvFile(); err != nil {
+		log.Println("Warning:", err)
 	}
 
 	// Парсим аргументы командной строки
 	modelFlag := flag.String("model", "", "Override the default model")
-	clipboardFlag := flag.Bool("copy", false, "Copy the result to clipboard")
+	noClipboardFlag := flag.Bool("no-copy", false, "Disable automatic copying to clipboard")
 	flag.Parse()
 
 	if flag.NArg() == 0 {
@@ -178,12 +218,39 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Выводим команду
-	fmt.Println(command)
+	// Удаляем символы ``` из команды
+	cleanCommand := command
+	if strings.HasPrefix(cleanCommand, "```") && strings.HasSuffix(cleanCommand, "```") {
+		cleanCommand = cleanCommand[3 : len(cleanCommand)-3]
+	} else {
+		// Удаляем только в начале или в конце, если есть
+		if strings.HasPrefix(cleanCommand, "```") {
+			cleanCommand = cleanCommand[3:]
+		}
+		if strings.HasSuffix(cleanCommand, "```") {
+			cleanCommand = cleanCommand[:len(cleanCommand)-3]
+		}
+	}
+	
+	// Удаляем префикс "bash" если он есть
+	if strings.HasPrefix(cleanCommand, "bash") {
+		cleanCommand = strings.TrimPrefix(cleanCommand, "bash")
+	}
+	
+	// Удаляем префикс "WARNING: " если он есть
+	if strings.HasPrefix(cleanCommand, "WARNING: ") {
+		cleanCommand = strings.TrimPrefix(cleanCommand, "WARNING: ")
+	}
+	
+	// Удаляем лишние пробелы в начале и конце
+	cleanCommand = strings.TrimSpace(cleanCommand)
 
-	// Копируем в буфер обмена, если указан флаг
-	if *clipboardFlag {
-		if err := copyToClipboard(command); err != nil {
+	// Выводим команду
+	fmt.Println(cleanCommand)
+
+	// Копируем в буфер обмена, если не указан флаг --no-copy
+	if !*noClipboardFlag {
+		if err := copyToClipboard(cleanCommand); err != nil {
 			fmt.Fprintf(os.Stderr, i18n.GetF("clipboard_error", err))
 		} else {
 			fmt.Println(i18n.Get("clipboard_success"))

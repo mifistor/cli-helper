@@ -1,6 +1,6 @@
 {
   "usage_error": "Error: Query is required",
-  "usage_help": "Usage: cli-helper [--model MODEL] [--copy] QUERY",
+  "usage_help": "Usage: cli-helper [--model MODEL] [--no-copy] QUERY",
   "api_key_error": "OPENAI_API_KEY not found in .env file or environment variables",
   "env_warning": "Warning: No .env file found or error loading it",
   "clipboard_error": "Error copying to clipboard: %v",

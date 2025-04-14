@@ -31,12 +31,33 @@ deps:
 	@echo "${GREEN}Установка зависимостей...${NC}"
 	$(GOMOD) tidy
 
-# Установка бинарного файла в систему
+# Установка бинарного файла в домашнюю директорию
 install: build
+	@echo "${GREEN}Установка $(BINARY_NAME) в ~/.$(BINARY_NAME)/...${NC}"
+	@mkdir -p ~/.$(BINARY_NAME)/locales
+	cp $(BUILD_DIR)/$(BINARY_NAME) ~/.$(BINARY_NAME)/
+	cp -r locales/* ~/.$(BINARY_NAME)/locales/
+	@if [ -f .env ]; then \
+		cp .env ~/.$(BINARY_NAME)/; \
+		echo "${GREEN}Файл .env скопирован в ~/.$(BINARY_NAME)/${NC}"; \
+	else \
+		echo "${GREEN}Файл .env не найден, создайте его в ~/.$(BINARY_NAME)/${NC}"; \
+	fi
+	@echo "${GREEN}Файлы локализации установлены в ~/.$(BINARY_NAME)/locales/${NC}"
+	@echo "${GREEN}Добавьте ~/.$(BINARY_NAME) в PATH для использования $(BINARY_NAME) из любой директории${NC}"
+
+# Установка бинарного файла в систему (требует sudo)
+install-system: build
 	@echo "${GREEN}Установка $(BINARY_NAME) в /usr/local/bin...${NC}"
 	@mkdir -p /usr/local/share/$(BINARY_NAME)/locales
 	cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
 	cp -r locales/* /usr/local/share/$(BINARY_NAME)/locales/
+	@if [ -f .env ]; then \
+		cp .env /usr/local/share/$(BINARY_NAME)/; \
+		echo "${GREEN}Файл .env скопирован в /usr/local/share/$(BINARY_NAME)/${NC}"; \
+	else \
+		echo "${GREEN}Файл .env не найден, создайте его в /usr/local/share/$(BINARY_NAME)/${NC}"; \
+	fi
 	@echo "${GREEN}Файлы локализации установлены в /usr/local/share/$(BINARY_NAME)/locales/${NC}"
 
 # Очистка сборки
@@ -62,15 +83,16 @@ run:
 # Справка
 help:
 	@echo "Доступные команды:"
-	@echo "  make build    - Сборка бинарного файла"
-	@echo "  make deps     - Установка зависимостей"
-	@echo "  make install  - Установка бинарного файла в /usr/local/bin"
-	@echo "  make clean    - Очистка сборки"
-	@echo "  make test     - Запуск тестов"
-	@echo "  make example  - Запуск примера"
+	@echo "  make build         - Сборка бинарного файла"
+	@echo "  make deps          - Установка зависимостей"
+	@echo "  make install       - Установка бинарного файла в ~/.$(BINARY_NAME)/"
+	@echo "  make install-system - Установка бинарного файла в /usr/local/bin (требует sudo)"
+	@echo "  make clean         - Очистка сборки"
+	@echo "  make test          - Запуск тестов"
+	@echo "  make example       - Запуск примера"
 	@echo "  make run ARGS=\"ваш запрос\" - Запуск основной программы с аргументами"
-	@echo "  make run COPY=\"--copy\" ARGS=\"ваш запрос\" - Запуск с копированием результата в буфер обмена"
-	@echo "  make help     - Показать эту справку"
+	@echo "  make run COPY=\"--no-copy\" ARGS=\"ваш запрос\" - Запуск с отключением копирования в буфер обмена"
+	@echo "  make help          - Показать эту справку"
 
 # По умолчанию
 default: help

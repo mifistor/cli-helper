@@ -63,16 +63,37 @@ func (l *Localizer) GetF(key string, args ...interface{}) string {
 
 // Загружает переводы из файлов
 func (l *Localizer) loadTranslations() error {
-	// Получаем путь к директории с локализациями
-	localesDir := filepath.Join(getExecutableDir(), "locales")
-	
-	// Проверяем существование директории
-	if _, err := os.Stat(localesDir); os.IsNotExist(err) {
-		// Если директория не существует, пробуем найти ее относительно текущей директории
-		localesDir = "locales"
-		if _, err := os.Stat(localesDir); os.IsNotExist(err) {
-			return fmt.Errorf("locales directory not found")
+	// Пути для поиска директории с локализациями
+	var localesDirs []string
+
+	// 1. Директория рядом с исполняемым файлом
+	if execDir := getExecutableDir(); execDir != "" {
+		localesDirs = append(localesDirs, filepath.Join(execDir, "locales"))
+	}
+
+	// 2. Директория в домашней директории пользователя
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		localesDirs = append(localesDirs, filepath.Join(homeDir, ".cli-helper", "locales"))
+	}
+
+	// 3. Системная директория
+	localesDirs = append(localesDirs, "/usr/local/share/cli-helper/locales")
+
+	// 4. Текущая директория
+	localesDirs = append(localesDirs, "locales")
+
+	// Ищем директорию с локализациями
+	var localesDir string
+	for _, dir := range localesDirs {
+		if _, err := os.Stat(dir); !os.IsNotExist(err) {
+			localesDir = dir
+			break
 		}
+	}
+
+	// Если директория не найдена
+	if localesDir == "" {
+		return fmt.Errorf("locales directory not found in any of the search paths")
 	}
 
 	// Получаем список файлов в директории
